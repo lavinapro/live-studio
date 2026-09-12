@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Instagram Live</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+html,body{height:100%;overflow:hidden;background:#000}
+body{position:fixed;inset:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+
+#setup{position:absolute;inset:0;background:#000;color:#fff;overflow-y:auto;padding:26px 18px 60px;z-index:60}
+#setup h1{font-size:21px;font-weight:700;margin-bottom:4px}
+#setup .sub{font-size:13px;color:#a8a8a8;margin-bottom:24px;line-height:1.45}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#8e8e8e;margin-bottom:7px;font-weight:600}
+.field input[type=text],.field input[type=password],.field input[type=number],.field textarea{width:100%;background:#121212;border:1px solid #262626;color:#fff;padding:12px;border-radius:10px;font-size:16px;font-family:inherit}
+.field textarea{height:86px;resize:none;line-height:1.5}
+.seg{display:flex;gap:7px}
+.seg button{flex:1;padding:11px 4px;border-radius:9px;border:1px solid #262626;background:#121212;color:#8e8e8e;font-size:13px;font-weight:600;font-family:inherit}
+.seg button.on{background:#fff;color:#000;border-color:#fff}
+.row{display:flex;gap:11px}.row .field{flex:1}
+input[type=range]{width:100%;accent-color:#fff}
+.val{float:right;color:#fff;font-weight:600;text-transform:none;letter-spacing:0}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #1c1c1c}
+.sw span{font-size:14px}
+.tg{width:46px;height:27px;border-radius:14px;background:#2c2c2e;position:relative;flex:0 0 auto;transition:background .18s}
+.tg::after{content:"";position:absolute;top:2.5px;left:2.5px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .18s}
+.tg.on{background:#0095f6}.tg.on::after{transform:translateX(19px)}
+#go{width:100%;padding:15px;border:0;border-radius:10px;background:#0095f6;color:#fff;font-size:15px;font-weight:700;font-family:inherit;margin-top:14px}
+.hint{font-size:12px;color:#6e6e6e;margin-top:8px;line-height:1.5}
+.filebtn{display:block;padding:12px;border:1px dashed #333;border-radius:10px;text-align:center;color:#8e8e8e;font-size:14px;margin-top:8px}
+#fileIn{display:none}
+.acc{border-top:1px solid #1c1c1c;margin-top:20px;padding-top:16px}
+.acc h4{font-size:13px;font-weight:600;color:#fff;margin-bottom:3px}
+.accBody{display:none;margin-top:14px}.accBody.on{display:block}
+.chev{float:right;color:#8e8e8e;font-size:13px}
+.ok{color:#2ecc71}.bad{color:#ed4956}
+
+#live{position:absolute;inset:0;display:none;overflow:hidden;background:#000}
+#live.on{display:block}
+#bg,#bgvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#bgvid{transform:scaleX(-1)}#bgvid.nomirror{transform:none}
+#grad{position:absolute;inset:0;background:linear-gradient(155deg,#3a1c71,#d76d77,#2b1055);background-size:220% 220%;animation:amb 16s ease infinite}
+@keyframes amb{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.shadeTop{position:absolute;top:0;left:0;right:0;height:190px;background:linear-gradient(180deg,rgba(0,0,0,.62),transparent);pointer-events:none}
+.shadeBot{position:absolute;bottom:0;left:0;right:0;height:290px;background:linear-gradient(0deg,rgba(0,0,0,.72),transparent);pointer-events:none}
+
+#status{position:absolute;top:0;left:0;right:0;height:54px;padding:14px 26px 0;display:none;align-items:flex-start;justify-content:space-between;color:#fff;font-size:15px;font-weight:600;z-index:20;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+#status.on{display:flex}
+.stIcons{display:flex;align-items:center;gap:5px;margin-top:1px}
+.bat{width:25px;height:12px;border:1.4px solid rgba(255,255,255,.85);border-radius:3.5px;position:relative;display:flex;align-items:center;padding:1.4px}
+.bat i{display:block;height:100%;width:72%;background:#fff;border-radius:1.5px}
+.bat::after{content:"";position:absolute;right:-3.4px;top:3.4px;width:1.8px;height:4px;background:rgba(255,255,255,.6);border-radius:0 1px 1px 0}
+
+.igTop{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top) + var(--stOff));padding:8px 12px 0;display:flex;align-items:center;gap:7px;z-index:10}
+.liveBadge{background:linear-gradient(97deg,#ff3041,#e60064);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;padding:5px 8px;border-radius:6px;text-transform:uppercase;line-height:1}
+.pill{display:flex;align-items:center;gap:4px;background:rgba(0,0,0,.4);backdrop-filter:blur(12px);padding:5px 8px;border-radius:6px;color:#fff;font-size:12.5px;font-weight:600;line-height:1}
+.spacer{flex:1}
+.endBtn{background:rgba(0,0,0,.4);backdrop-filter:blur(12px);color:#fff;font-size:13px;font-weight:600;padding:6px 12px;border-radius:8px}
+.selfRow{position:absolute;left:12px;top:calc(env(safe-area-inset-top) + var(--stOff) + 40px);display:flex;align-items:center;gap:8px;z-index:10}
+.selfRow img{width:30px;height:30px;border-radius:50%;border:1.5px solid rgba(255,255,255,.9)}
+.selfRow .nm{color:#fff;font-size:13.5px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.follow{background:#0095f6;color:#fff;font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:8px}
+.stack{position:absolute;right:12px;top:calc(env(safe-area-inset-top) + var(--stOff) + 42px);display:flex;flex-direction:row-reverse;align-items:center;z-index:10}
+.stack img{width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(0,0,0,.35);margin-left:-9px}
+.pinned{position:absolute;left:12px;right:12px;top:calc(env(safe-area-inset-top) + var(--stOff) + 82px);display:none;align-items:flex-start;gap:8px;background:rgba(0,0,0,.45);backdrop-filter:blur(14px);border-radius:12px;padding:9px 11px;z-index:10}
+.pinned.on{display:flex}
+.pinned img{width:24px;height:24px;border-radius:50%;flex:0 0 auto}
+.pinned .txt{color:#fff;font-size:13px;line-height:1.35}
+.pinned .txt b{font-weight:600;margin-right:5px}
+.pinned .tag{font-size:10.5px;color:rgba(255,255,255,.65);display:block;margin-bottom:2px;font-weight:600}
+
+#chat{position:absolute;left:0;bottom:calc(env(safe-area-inset-bottom) + 70px);width:78%;padding-left:12px;max-height:46%;display:flex;flex-direction:column;justify-content:flex-end;gap:11px;overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 26%);mask-image:linear-gradient(180deg,transparent 0,#000 26%);z-index:9}
+.cm{display:flex;align-items:flex-start;gap:9px;animation:cmIn .32s cubic-bezier(.22,.9,.36,1)}
+.cm img{width:26px;height:26px;border-radius:50%;flex:0 0 auto;margin-top:1px}
+.cm .body{color:#fff;font-size:13.5px;line-height:1.32;text-shadow:0 1px 3px rgba(0,0,0,.55);word-break:break-word}
+.cm .body b{font-weight:600;margin-right:5px}
+.cm .body .at{color:#c8e1ff;font-weight:600}
+.cm .body .vf{display:inline-block;width:11px;height:11px;margin-left:-2px;margin-right:5px;vertical-align:-1px}
+.cm.sys .body{color:rgba(255,255,255,.85);font-size:13px}
+@keyframes cmIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.igBot{position:absolute;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 14px);display:flex;align-items:center;gap:12px;z-index:10}
+.inp{flex:1;border:1px solid rgba(255,255,255,.55);border-radius:22px;padding:11px 15px;color:rgba(255,255,255,.85);font-size:13.5px}
+.ic{width:25px;height:25px;color:#fff;flex:0 0 auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45))}
+#hearts{position:absolute;right:6px;bottom:calc(env(safe-area-inset-bottom) + 56px);width:76px;height:52%;pointer-events:none;overflow:hidden;z-index:8}
+.hb{position:absolute;bottom:0;right:14px;width:30px;height:30px;animation:rise 3.6s ease-in forwards}
+.hb svg{width:100%;height:100%;animation:wob 1.6s ease-in-out infinite alternate}
+@keyframes rise{0%{opacity:0;transform:translateY(0) scale(.35)}10%{opacity:1;transform:translateY(-16px) scale(1)}80%{opacity:.95}100%{opacity:0;transform:translateY(-100%) scale(.9)}}
+@keyframes wob{from{transform:translateX(-14px) rotate(-9deg)}to{transform:translateX(14px) rotate(9deg)}}
+#mic{position:absolute;right:12px;bottom:calc(env(safe-area-inset-bottom) + 62px);width:8px;height:8px;border-radius:50%;background:#ff3041;opacity:0;transition:opacity .2s,transform .1s;z-index:11}
+#mic.on{opacity:.9}
+#llmDot{position:absolute;right:26px;bottom:calc(env(safe-area-inset-bottom) + 62px);width:8px;height:8px;border-radius:50%;background:#0095f6;opacity:0;transition:opacity .25s;z-index:11}
+#llmDot.on{opacity:.85}
+
+#sheet{position:absolute;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:40;padding:32px}
+#sheet.on{display:flex}
+.card{background:#262626;border-radius:14px;width:100%;max-width:290px;overflow:hidden;text-align:center}
+.card h3{color:#fff;font-size:15px;font-weight:600;padding:20px 20px 6px}
+.card p{color:#a8a8a8;font-size:13px;padding:0 20px 18px;line-height:1.4}
+.card button{width:100%;padding:14px;background:none;border:0;border-top:1px solid #363636;font-size:15px;font-family:inherit}
+.card .red{color:#ed4956;font-weight:700}.card .gray{color:#fff}
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <h1>Instagram Live</h1>
+  <p class="sub">Копия экрана прямого эфира. Зрители — постоянные персонажи со своими характерами, они реагируют на то, что ты говоришь.</p>
+
+  <div class="field">
+    <label>Роль</label>
+    <div class="seg" id="role"><button data-v="host" class="on">Я веду эфир</button><button data-v="guest">Я смотрю чужой</button></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>Ник</label><input type="text" id="nick" value="kiriukhin"></div>
+    <div class="field"><label>Зрителей</label><input type="number" id="viewers" value="1240"></div>
+  </div>
+  <div class="field"><label>Закреплённый комментарий</label><input type="text" id="pin" value="ссылка в шапке профиля 👆"></div>
+
+  <div class="field">
+    <label>Тема эфира — по ней зрители подбирают реплики</label>
+    <input type="text" id="topic" value="автоматизация отелей, Bitrix24, работа с клиентами">
+  </div>
+
+  <div class="row">
+    <div class="field"><label>Рост<span class="val" id="growV">средний</span></label><input type="range" id="grow" min="0" max="3" value="2"></div>
+    <div class="field"><label>Чат<span class="val" id="spdV">живой</span></label><input type="range" id="spd" min="0" max="3" value="2"></div>
+  </div>
+
+  <div class="field">
+    <label>Реакция на голос</label>
+    <div class="seg" id="voice"><button data-v="off">Выкл</button><button data-v="vol">Громкость</button><button data-v="full" class="on">Голос + слова</button></div>
+  </div>
+
+  <div class="field">
+    <label>Фон</label>
+    <div class="seg" id="src"><button data-v="cam" class="on">Камера</button><button data-v="file">Фото/видео</button><button data-v="grad">Градиент</button></div>
+    <label class="filebtn" for="fileIn" id="fileLbl" style="display:none">Выбрать файл из галереи</label>
+    <input type="file" id="fileIn" accept="image/*,video/*">
+    <div class="filebtn" id="testCam" style="margin-top:8px">Проверить камеру и микрофон</div>
+    <div id="diag" class="hint"></div>
+  </div>
+
+  <div class="sw"><span>Фейковый статус-бар iPhone</span><div class="tg" id="tgStatus"></div></div>
+  <div class="sw"><span>Закреплённый комментарий</span><div class="tg on" id="tgPin"></div></div>
+  <div class="sw" style="border:0"><span>Спам-бот в чате</span><div class="tg on" id="tgSpam"></div></div>
+
+  <div class="acc">
+    <h4 id="llmHead">Умные ответы через нейросеть <span class="chev" id="llmChev">Настроить ▾</span></h4>
+    <p class="hint">Без ключа чат работает на встроенных шаблонах. С ключом зрители отвечают на смысл сказанного.</p>
+    <div class="accBody" id="llmBody">
+      <div class="field"><label>Адрес прокси (рекомендуется)</label><input type="text" id="proxy" placeholder="https://твой-сервер/chat"></div>
+      <div class="field"><label>Или ключ Anthropic напрямую</label><input type="password" id="key" placeholder="sk-ant-..."></div>
+      <p class="hint">Ключ хранится только в этом браузере. В интернете лучше поднять прокси — см. README.</p>
+    </div>
+  </div>
+
+  <div class="field" style="margin-top:18px">
+    <label>Свои комментарии (по одному в строке)</label>
+    <textarea id="custom" placeholder="привет из Питера&#10;когда следующий эфир?"></textarea>
+  </div>
+
+  <button id="go">Начать эфир</button>
+  <p class="hint" id="warn">Тап по экрану — сердечко. Выход — «Завершить».</p>
+</div>
+
+<div id="live" style="--stOff:0px">
+  <div id="grad"></div><img id="bg" style="display:none">
+  <video id="bgvid" playsinline muted autoplay style="display:none"></video>
+  <div class="shadeTop"></div><div class="shadeBot"></div>
+
+  <div id="status"><span id="clock">9:41</span>
+    <div class="stIcons">
+      <svg width="18" height="12" viewBox="0 0 18 12" fill="#fff"><rect y="8" width="3" height="4" rx="1"/><rect x="4.5" y="6" width="3" height="6" rx="1"/><rect x="9" y="3.4" width="3" height="8.6" rx="1"/><rect x="13.5" width="3" height="12" rx="1"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="#fff"><path d="M8 11.4l2.2-2.6a3.4 3.4 0 00-4.4 0L8 11.4zM3.4 6.1l1.5 1.8a5.6 5.6 0 016.2 0l1.5-1.8a8 8 0 00-9.2 0zM.6 2.8l1.5 1.8a10.4 10.4 0 0111.8 0l1.5-1.8a12.8 12.8 0 00-14.8 0z"/></svg>
+      <div class="bat"><i></i></div>
+    </div>
+  </div>
+
+  <div class="igTop">
+    <span class="liveBadge">Эфир</span>
+    <span class="pill"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/></svg><span id="cnt">0</span></span>
+    <div class="spacer"></div><span class="endBtn" id="endBtn">Завершить</span>
+  </div>
+
+  <div class="selfRow"><img id="ava"><span class="nm" id="nickEl"></span><span class="follow" id="followBtn" style="display:none">Подписаться</span></div>
+  <div class="stack" id="stack"></div>
+  <div class="pinned" id="pinned"><img id="pinAva"><div class="txt"><span class="tag">Закреплённый комментарий</span><b id="pinNick"></b><span id="pinTxt"></span></div></div>
+
+  <div id="chat"></div><div id="hearts"></div><div id="mic"></div><div id="llmDot"></div>
+
+  <div class="igBot">
+    <div class="inp">Добавить комментарий…</div>
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20.5s-7.5-4.6-7.5-9.8A4.2 4.2 0 0112 8.6a4.2 4.2 0 017.5 2.1c0 5.2-7.5 9.8-7.5 9.8z"/></svg>
+    <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+  </div>
+
+  <div id="sheet"><div class="card">
+    <h3>Завершить прямой эфир?</h3><p>Если вы завершите эфир, его больше нельзя будет посмотреть.</p>
+    <button class="red" id="reallyEnd">Завершить</button><button class="gray" id="cancelEnd">Отмена</button>
+  </div></div>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), rnd=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ============ ПОСТОЯННАЯ АУДИТОРИЯ ============ */
+/* w — как часто пишет, v — галочка, e — доля эмодзи, len — длина реплик */
+const CAST=[
+ {n:"kate_sun",   role:"фанатка, восторженная, много эмодзи и комплиментов", w:1.5,e:.7,len:"короткие"},
+ {n:"denis_77",   role:"технарь, комментирует звук, свет, качество картинки", w:1.0,e:.1,len:"короткие"},
+ {n:"lera_x",     role:"задаёт уточняющие вопросы по теме, вежливая", w:1.3,e:.2,len:"средние"},
+ {n:"ivan.v",     role:"скептик, сомневается, просит доказательств, но не грубит", w:.9,e:.05,len:"средние"},
+ {n:"max_power",  role:"пишет односложно: плюс, топ, база, го", w:1.4,e:.3,len:"очень короткие"},
+ {n:"nastya.k",   role:"новичок в теме, всё переспрашивает, извиняется", w:1.1,e:.4,len:"средние"},
+ {n:"sanya_bx",   role:"старый друг, подкалывает, свои шутки", w:1.0,e:.2,len:"короткие"},
+ {n:"olga.p",     role:"практик, делится своим опытом по теме", w:.9,e:.1,len:"длинные"},
+ {n:"art_yom",    role:"опоздал, всё время переспрашивает что уже было", w:.8,e:.15,len:"короткие"},
+ {n:"vika_love",  role:"ставит сердечки и хвалит внешний вид", w:1.2,e:.8,len:"очень короткие"},
+ {n:"pavel.m",    role:"профи, уточняет детали и поправляет по делу", w:.8,e:.05,len:"длинные", v:1},
+ {n:"timur_a",    role:"весёлый, шутит и ржёт над всем", w:1.1,e:.5,len:"короткие"},
+ {n:"irina_k",    role:"спрашивает про цены, сроки и условия", w:.9,e:.1,len:"средние"},
+ {n:"gleb_ov",    role:"пишет из другого города, часто упоминает свой Новосибирск", w:.7,e:.2,len:"короткие"},
+ {n:"mila.ko",    role:"тихая, редко пишет, но всегда по делу", w:.5,e:.2,len:"средние"},
+ {n:"stas.dm",    role:"просит повторить, жалуется что не успевает записывать", w:.7,e:.1,len:"короткие"},
+ {n:"alina_msk",  role:"пришла первый раз, спрашивает где смотреть прошлые эфиры", w:.6,e:.4,len:"короткие"},
+ {n:"roma.d",     role:"договаривается о встрече, зовёт куда-то после эфира", w:.6,e:.2,len:"короткие"}
+];
+const NEWCOMERS=["andrey_kzn","sofia.pro","nikita_v","julia.wow","marat_k","lena_sun","boris_v","ksenia.b","zhenya_s","artur.m"];
+
+/* готовые реплики по ролям — работают мгновенно, без сети */
+const BY_ROLE={
+ "kate_sun":["обожаю эти эфиры ❤️","ты лучший 🥺","жду каждый раз 💗","ааа наконец-то 😍","самый полезный канал 🔥"],
+ "denis_77":["звук чистый","чуть эхо появилось","картинка норм, не лагает","у меня без задержек","микрофон отлично"],
+ "lera_x":["а можно чуть подробнее?","то есть это работает всегда?","а если по-другому сделать?","уточню: это про первый шаг?"],
+ "ivan.v":["ну не знаю","а пруфы будут?","на практике сложнее","спорно","у меня так не вышло"],
+ "max_power":["+","топ","база","го","👍","факт"],
+ "nastya.k":["извините, а можно с начала?","я запуталась 🙈","а что такое это?","первый раз слышу"],
+ "sanya_bx":["опять ты за своё 😄","ну ты выдал","классика","знаем-знаем"],
+ "olga.p":["у меня похожая ситуация была, решила так же","мы это внедряли, работает","подтверждаю по опыту"],
+ "art_yom":["что было в начале?","я опоздал, о чём речь?","перемотать бы"],
+ "vika_love":["❤️","🔥🔥🔥","красавчик","стильно выглядишь 😍"],
+ "pavel.m":["тут важна деталь: без этого не заведётся","верно, но есть нюанс","добавлю: ещё вариант есть"],
+ "timur_a":["ору 😂","это сильно","ахахах","не могу 🤣"],
+ "irina_k":["а по деньгам сколько?","сроки какие?","это входит в стоимость?"],
+ "gleb_ov":["привет из Новосиба 👋","у нас тут уже ночь","смотрю из Новосибирска"],
+ "mila.ko":["полезно, спасибо","записываю","это ценно"],
+ "stas.dm":["помедленнее, не успеваю","повтори последнее плз","записываю в заметки"],
+ "alina_msk":["а где прошлые эфиры?","в профиле есть запись?","подписалась ✅"],
+ "roma.d":["после эфира созвон?","го в субботу","ты завтра свободен?"]
+};
+const GENERIC=["привет всем!","+","о чём сегодня?","🔥🔥🔥","только зашёл","кто ещё смотрит?","привет из Питера","привет из Москвы","подписался","лайк поставил ❤️","топ","👏👏👏","я тут 🙋","мощно","это база","добрый вечер","всем привет 👋","эфир огонь","можно вопрос?","👀"];
+const SYS=["присоединился","присоединилась","смотрит эфир","поделился(-ась) эфиром"];
+const SPAM=["зАрАбОтОк от 15000/день, пиши в лс 💰","🎁 разыгрываю iphone, подпишись на профиль","накрутка подписчиков дёшево, в директ"];
+
+const TRIGGERS=[
+ {re:/(привет|здравствуй|здорово|здарова|добрый вечер|доброе утро|на связи|начина)/i,n:[4,7],
+  r:["привет!","привет 👋","о, привет!","приветики","здарова","привет из Питера","привет из Казани","добрый вечер","о, началось!"]},
+ {re:/(как дела|как вы|как настроение|кто тут|кто на связи|кто смотрит|есть кто)/i,n:[4,7],
+  r:["я тут 🙋","на связи","всё отлично!","норм, а у тебя?","тут-тут","+","держу","смотрю с работы 👀"]},
+ {re:/(слышно|слышите|видно|звук|качество|связь|микрофон)/i,n:[4,6],
+  r:["слышно отлично","всё видно ✅","звук топ","чисто","идеально","чуть эхо есть","4G, но всё ок"]},
+ {re:/(вопрос|спрашивай|задавай|что интересует|пишите в чат)/i,n:[4,7],
+  r:["а расскажи подробнее?","сколько времени ушло?","с чего начать новичку?","а по деньгам как?","можешь показать?","я писал выше 🙏"]},
+ {re:/(лайк|подпис|поставьте|поддержите|репост|поделит)/i,n:[4,7],
+  r:["поставил ❤️","подписался ✅","готово 👍","лайк есть","давно подписан","держи лайк 🔥"]},
+ {re:/(розыгрыш|подарок|приз|конкурс|раздаю|бесплатн)/i,n:[5,8],r:["участвую!","я в деле 🙋","+++","хочу!","как участвовать?","я первый"]},
+ {re:/(спасибо|пока|до встречи|заканчива|на сегодня всё|отключаюсь)/i,n:[4,7],
+  r:["спасибо! ❤️","пока 👋","было круто","жду следующий","спасибо за эфир 🙏","ещё чуть-чуть 🥺"]},
+ {re:/(смешно|хаха|шутк|прикол|анекдот)/i,n:[4,7],r:["ору 😂","ахахаха","😂😂😂","не могу 🤣","ржу","💀"]},
+ {re:/(круто|класс|отлично|получилось|запустил|готово)/i,n:[3,6],r:["мощно 🔥","красава","поздравляю!","вот это результат","заслужено 👏"]},
+ {re:/(сколько|цена|стоит|деньг|рубл|тысяч)/i,n:[3,5],r:["а точнее по цене?","дороговато","норм цена","за такое не жалко"]}
+];
+const ECHO=["{w} — тема","а про {w} подробнее?","+ за {w}","{w} 🔥","о, {w}, интересно","давай ещё про {w}"];
+const SILENCE=["алло?","звук пропал?","слышно кого-нибудь?","у всех тихо?","эй 👀","всё норм?"];
+const STOP=new Set(["который","которая","поэтому","потому","сейчас","просто","вообще","например","значит","короче","такое","этого","всего","более","очень","можно","нужно","чтобы","когда","после","будет","было","были","делать","сделать","говорю","думаю","здесь","опять","снова","много"]);
+
+let cfg={role:"host",src:"cam",voice:"full",pin:true,status:false,spam:true};
+let timers=[],camStream=null,micStream=null,rec=null,audioCtx=null,lastLoud=0,recActive=false,lastFired=0;
+let count=0, lastNick=null, llmBusy=false, lastLLM=0, said=[], camNote="";
+
+function avatar(name){
+  let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))%360;
+  return "data:image/svg+xml;utf8,"+encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h},62%,52%)"/><stop offset="1" stop-color="hsl(${(h+42)%360},62%,38%)"/></linearGradient></defs><rect width="80" height="80" fill="url(%23g)"/><text x="40" y="53" font-size="36" font-weight="600" font-family="Helvetica,Arial" fill="rgba(255,255,255,.92)" text-anchor="middle">${name[0].toUpperCase()}</text></svg>`);
+}
+function pickCast(){
+  const tot=CAST.reduce((s,c)=>s+c.w,0);let r=Math.random()*tot;
+  for(const c of CAST){r-=c.w;if(r<=0)return c}
+  return CAST[0];
+}
+/* лёгкие опечатки и «человеческий» шум */
+function humanize(t,p){
+  if(Math.random()<.07) t=t.replace(/[а-я]{4,}/,m=>m.slice(0,-1));       // проглоченная буква
+  if(Math.random()<.05) t=t+t.slice(-1);                                  // задвоенная
+  if(p&&Math.random()<p.e*.35&&!/[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u.test(t)) t+=" "+rnd(["❤️","🔥","👏","😍","💯","👍"]);
+  if(Math.random()<.12) t=t.replace(/[.!]$/,"");
+  return t;
+}
+
+/* ============ НАСТРОЙКИ ============ */
+function seg(id,key){document.querySelectorAll("#"+id+" button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("#"+id+" button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");cfg[key]=b.dataset.v;
+  if(id==="src")$("#fileLbl").style.display=cfg.src==="file"?"block":"none";});}
+seg("role","role");seg("src","src");seg("voice","voice");
+const SPD=["редкий","спокойный","живой","шторм"],GRW=["без роста","медленный","средний","быстрый"];
+$("#spd").oninput=e=>$("#spdV").textContent=SPD[e.target.value];
+$("#grow").oninput=e=>$("#growV").textContent=GRW[e.target.value];
+const tg=(id,key)=>$(id).onclick=e=>{e.currentTarget.classList.toggle("on");cfg[key]=e.currentTarget.classList.contains("on")};
+tg("#tgStatus","status");tg("#tgPin","pin");tg("#tgSpam","spam");
+$("#llmHead").onclick=()=>{const b=$("#llmBody");b.classList.toggle("on");$("#llmChev").textContent=b.classList.contains("on")?"Свернуть ▴":"Настроить ▾"};
+let fileURL=null,fileIsVideo=false;
+$("#fileIn").onchange=e=>{const f=e.target.files[0];if(!f)return;fileURL=URL.createObjectURL(f);fileIsVideo=f.type.startsWith("video");$("#fileLbl").textContent="✓ "+f.name.slice(0,26)};
+try{$("#key").value=localStorage.getItem("igk")||"";$("#proxy").value=localStorage.getItem("igp")||"";$("#topic").value=localStorage.getItem("igt")||$("#topic").value}catch(e){}
+$("#testCam").onclick=async()=>{
+  const d=$("#diag");d.innerHTML="Проверяю…";
+  const out=[];
+  out.push((window.isSecureContext?'<span class="ok">✓</span> ':'<span class="bad">✕</span> ')+"защищённое соединение ("+location.protocol+")");
+  out.push((window.self===window.top?'<span class="ok">✓</span> ':'<span class="bad">✕</span> ')+"страница открыта напрямую, не в iframe");
+  let cam=null,mic=null;
+  try{cam=await openCam(false)}catch(e){try{cam=await openCam(true)}catch(e2){out.push('<span class="bad">✕</span> камера: '+camDiag(e2))}}
+  if(cam){const t=cam.getVideoTracks()[0];out.push('<span class="ok">✓</span> камера: '+(t?t.label||"работает":"работает"));cam.getTracks().forEach(t=>t.stop())}
+  try{mic=await navigator.mediaDevices.getUserMedia({audio:true})}catch(e){out.push('<span class="bad">✕</span> микрофон: '+camDiag(e))}
+  if(mic){out.push('<span class="ok">✓</span> микрофон работает');mic.getTracks().forEach(t=>t.stop())}
+  out.push(((window.SpeechRecognition||window.webkitSpeechRecognition)?'<span class="ok">✓</span> ':'<span class="bad">✕</span> ')+"распознавание речи");
+  d.innerHTML=out.join("<br>");
+};
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR)$("#warn").innerHTML="Распознавание слов в этом браузере недоступно — останется режим «Громкость». Полный режим: Chrome / Safari.<br>Выход — «Завершить».";
+
+/* ============ СТАРТ ============ */
+$("#go").onclick=async()=>{
+  const nick=$("#nick").value.trim()||"user";
+  cfg.viewers=Math.max(1,parseInt($("#viewers").value)||500);
+  cfg.spd=+$("#spd").value;cfg.grow=+$("#grow").value;
+  cfg.custom=$("#custom").value.split("\n").map(s=>s.trim()).filter(Boolean);
+  cfg.topic=$("#topic").value.trim();
+  cfg.key=$("#key").value.trim();cfg.proxy=$("#proxy").value.trim();
+  try{localStorage.setItem("igk",cfg.key);localStorage.setItem("igp",cfg.proxy);localStorage.setItem("igt",cfg.topic)}catch(e){}
+
+  $("#nickEl").textContent=nick;$("#ava").src=avatar(nick);
+  $("#followBtn").style.display=cfg.role==="guest"?"block":"none";
+  $("#endBtn").textContent=cfg.role==="guest"?"✕":"Завершить";
+  $("#live").style.setProperty("--stOff",cfg.status?"34px":"0px");
+  $("#status").classList.toggle("on",cfg.status);
+  if(cfg.status){const t=()=>{const d=new Date();$("#clock").textContent=d.getHours()+":"+String(d.getMinutes()).padStart(2,"0")};t();timers.push(setInterval(t,20000))}
+  const pt=$("#pin").value.trim();
+  if(cfg.pin&&pt){const pn=cfg.role==="host"?nick:rnd(CAST).n;$("#pinNick").textContent=pn;$("#pinAva").src=avatar(pn);$("#pinTxt").textContent=pt;$("#pinned").classList.add("on")}
+  const st=$("#stack");st.innerHTML="";
+  for(let i=0;i<4;i++){const im=new Image();im.src=avatar(rnd(CAST).n);st.appendChild(im)}
+
+  await setupBg();
+  if(camNote){
+    $("#diag").innerHTML='<span class="bad">Камера не включилась.</span> '+camNote+'<br>Эфир запущен с градиентным фоном.';
+    $("#diag").scrollIntoView({behavior:"smooth",block:"center"});
+  }
+  if(cfg.voice!=="off")await setupVoice();
+  $("#setup").style.display="none";$("#live").classList.add("on");
+  try{document.documentElement.requestFullscreen?.()}catch(e){}
+  start();
+};
+
+/* ---- почему камера не открылась: человеческий текст ошибки ---- */
+function camDiag(e){
+  if(!window.isSecureContext) return "Страница открыта не по HTTPS. Браузер отдаёт камеру только защищённым страницам. Открой сайт по https:// или запусти локально через python3 -m http.server (localhost тоже считается защищённым). Файл, открытый двойным кликом (file://), камеру не получит.";
+  if(window.self!==window.top) return "Страница работает внутри чужого окна (iframe), а оно не пропускает камеру. Открой её напрямую отдельной вкладкой.";
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia) return "Браузер не поддерживает доступ к камере. Нужен Chrome или Safari свежей версии.";
+  const n=e&&e.name;
+  if(n==="NotAllowedError") return "Доступ к камере запрещён. Нажми на замок слева от адреса → Камера → Разрешить, и перезагрузи страницу. На iPhone: Настройки → Safari → Камера → Спросить.";
+  if(n==="NotFoundError"||n==="OverconstrainedError") return "Фронтальная камера не найдена. Попробуй «Любая камера» или выбери фото из галереи.";
+  if(n==="NotReadableError") return "Камеру занимает другое приложение. Закрой Zoom, Telegram, вкладки с видеозвонком — и попробуй снова.";
+  if(n==="AbortError") return "Система прервала запуск камеры. Перезагрузи страницу.";
+  return "Не удалось включить камеру"+(n?" ("+n+")":"")+".";
+}
+
+async function openCam(any){
+  const c=any?{video:true,audio:false}
+            :{video:{facingMode:{ideal:"user"},width:{ideal:1280}},audio:false};
+  return navigator.mediaDevices.getUserMedia(c);
+}
+
+async function setupBg(){
+  const v=$("#bgvid"),img=$("#bg"),g=$("#grad");
+  v.style.display="none";img.style.display="none";g.style.display="block";
+  camNote="";
+  if(cfg.src==="cam"){
+    if(!window.isSecureContext||window.self!==window.top||!navigator.mediaDevices){camNote=camDiag();return}
+    try{
+      try{camStream=await openCam(false)}
+      catch(e1){ if(e1.name==="OverconstrainedError"||e1.name==="NotFoundError") camStream=await openCam(true); else throw e1 }
+      v.srcObject=camStream;v.classList.remove("nomirror");v.style.display="block";g.style.display="none";
+      await v.play().catch(()=>{});
+    }catch(e){ camNote=camDiag(e) }
+  }else if(cfg.src==="file"&&fileURL){
+    if(fileIsVideo){v.src=fileURL;v.loop=true;v.classList.add("nomirror");v.style.display="block";v.play()}
+    else{img.src=fileURL;img.style.display="block"}
+    g.style.display="none";}
+}
+
+async function setupVoice(){
+  try{
+    micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const an=audioCtx.createAnalyser();an.fftSize=512;
+    audioCtx.createMediaStreamSource(micStream).connect(an);
+    const buf=new Uint8Array(an.frequencyBinCount);
+    $("#mic").classList.add("on");lastLoud=Date.now();
+    const loop=()=>{an.getByteFrequencyData(buf);
+      let s=0;for(let i=0;i<buf.length;i++)s+=buf[i];
+      const lvl=s/buf.length;
+      $("#mic").style.transform="scale("+(1+Math.min(lvl/40,1)*1.4)+")";
+      if(lvl>12){lastLoud=Date.now();
+        if(Math.random()<.012)addMsg();
+        if(lvl>34&&Math.random()<.28)heart();}
+      requestAnimationFrame(loop);};loop();
+  }catch(e){return}
+  if(cfg.voice==="full"&&SR){
+    rec=new SR();rec.lang="ru-RU";rec.continuous=true;rec.interimResults=true;
+    let seen="";
+    rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){
+      const t=e.results[i][0].transcript.trim();if(!t||t===seen)continue;
+      if(e.results[i].isFinal){seen="";react(t)}
+      else if(t.length>seen.length+14){seen=t;react(t,true)}}};
+    rec.onend=()=>{if(recActive)try{rec.start()}catch(e){}};
+    rec.onerror=ev=>{if(ev.error==="not-allowed")recActive=false};
+    recActive=true;try{rec.start()}catch(e){}
+  }
+}
+
+/* ============ РЕАКЦИЯ ============ */
+function react(text,interim){
+  if(!interim){said.push(text);if(said.length>6)said.shift();askLLM(text)}
+  if(Date.now()-lastFired<1500)return;
+  const hits=TRIGGERS.filter(t=>t.re.test(text));
+  if(hits.length){
+    lastFired=Date.now();
+    const t=rnd(hits),n=t.n[0]+Math.floor(Math.random()*(t.n[1]-t.n[0]+1)),used=new Set();
+    for(let i=0;i<n;i++){let m,g=0;do{m=rnd(t.r);g++}while(used.has(m)&&g<8);used.add(m);
+      setTimeout(()=>addMsg(m),350+i*(180+Math.random()*420));}
+    for(let i=0;i<n;i++)setTimeout(heart,300+i*160);
+    count+=Math.floor(Math.random()*8);
+    return;
+  }
+  if(interim)return;
+  const words=text.toLowerCase().replace(/[^а-яёa-z\s]/gi," ").split(/\s+/).filter(w=>w.length>5&&!STOP.has(w));
+  if(words.length&&Math.random()<.5){
+    lastFired=Date.now();const w=rnd(words),n=2+Math.floor(Math.random()*2);
+    for(let i=0;i<n;i++)setTimeout(()=>addMsg(rnd(ECHO).replace("{w}",w)),500+i*600);
+  }
+}
+
+/* ============ УМНЫЕ ОТВЕТЫ ============ */
+async function askLLM(text){
+  if(llmBusy||(!cfg.key&&!cfg.proxy))return;
+  if(text.split(/\s+/).length<4||Date.now()-lastLLM<7000)return;
+  llmBusy=true;lastLLM=Date.now();$("#llmDot").classList.add("on");
+  const roster=CAST.map(c=>`${c.n} — ${c.role} (реплики ${c.len})`).join("\n");
+  const prompt=`Ты имитируешь чат прямого эфира в Instagram.
+Тема эфира: ${cfg.topic||"свободная"}.
+Ведущий только что сказал: "${text}"
+Предыдущие фразы ведущего: ${said.slice(0,-1).join(" | ")||"нет"}
+
+Зрители:
+${roster}
+
+Верни ТОЛЬКО JSON-массив из 3-6 объектов вида {"n":"ник","t":"текст"}.
+Правила: реплики реагируют на конкретный смысл сказанного — отвечают, уточняют, соглашаются, шутят, спорят. 1-9 слов. Строчными буквами, без точки в конце, живой разговорный русский, иногда с опечаткой. Не повторяй слова ведущего дословно. Никакого текста вне JSON.`;
+  try{
+    let data;
+    if(cfg.proxy){
+      const r=await fetch(cfg.proxy,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
+      data=await r.json();
+    }else{
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":cfg.key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:400,messages:[{role:"user",content:prompt}]})});
+      data=await r.json();
+    }
+    const raw=(data.content?data.content.map(b=>b.text||"").join(""):data.text||"").replace(/```json|```/g,"").trim();
+    const arr=JSON.parse(raw.slice(raw.indexOf("["),raw.lastIndexOf("]")+1));
+    arr.slice(0,6).forEach((m,i)=>{
+      const p=CAST.find(c=>c.n===m.n)||pickCast();
+      const delay=900+i*(600+Math.random()*900)+String(m.t).length*38;   // «печатает»
+      setTimeout(()=>addMsg(humanize(String(m.t),p),p),delay);
+    });
+  }catch(e){}
+  $("#llmDot").classList.remove("on");llmBusy=false;
+}
+
+/* ============ ЭФИР ============ */
+const fmt=n=>n>=1000?(n/1000).toFixed(1).replace(".",",")+" тыс.":String(n);
+function start(){
+  count=cfg.viewers;$("#cnt").textContent=fmt(count);
+  const growth=[0,1,3,8][cfg.grow];
+  timers.push(setInterval(()=>{
+    const quiet=micStream&&Date.now()-lastLoud>12000;
+    count+=Math.round((Math.random()*2-.6)*growth*(quiet?-.6:1)+(Math.random()<.5?1:-1)*Math.random()*3);
+    count=Math.max(5,count);$("#cnt").textContent=fmt(count);},1800));
+  const base=[3400,1900,950,420][cfg.spd];
+  const tick=()=>{addMsg();timers.push(setTimeout(tick,base*(.45+Math.random()*1.3)))};
+  timers.push(setTimeout(tick,700));
+  timers.push(setInterval(()=>{if(Math.random()<.85)heart()},[1400,900,550,260][cfg.spd]));
+  for(let i=0;i<3;i++)setTimeout(addMsg,i*450);
+  if(cfg.voice!=="off")timers.push(setInterval(()=>{
+    if(micStream&&Date.now()-lastLoud>9000&&Math.random()<.5){addMsg(rnd(SILENCE));lastLoud=Date.now()-4000}},4000));
+  if(cfg.spam)timers.push(setInterval(()=>{
+    if(Math.random()<.5)addMsg(rnd(SPAM),{n:"promo_"+Math.floor(Math.random()*9000),e:0});},47000));
+}
+
+function addMsg(forced,persona){
+  const chat=$("#chat");
+  let p=persona;
+  if(!p){
+    if(Math.random()<.14){const n=rnd(NEWCOMERS);p={n,e:.3}}
+    else p=pickCast();
+  }
+  const d=document.createElement("div");d.className="cm";
+  const im=new Image();im.src=avatar(p.n);d.appendChild(im);
+  const b=document.createElement("div");b.className="body";
+  const vf=p.v?`<svg class="vf" viewBox="0 0 24 24" fill="#0095f6"><path d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.9 1.4-1.2 3 1.2 3-2.9 1.4-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1L2.6 15.7l1.2-3-1.2-3 2.9-1.4.9-3.1 3.2.3z"/></svg>`:"";
+  if(!forced&&Math.random()<.1){
+    d.classList.add("sys");b.innerHTML=`<b>${p.n}</b>${rnd(SYS)}`;
+  }else{
+    let t=forced;
+    if(!t){
+      const own=BY_ROLE[p.n];
+      const pool=cfg.custom.length&&Math.random()<.25?cfg.custom:(own&&Math.random()<.55?own:GENERIC);
+      t=humanize(rnd(pool),p);
+    }
+    let at="";
+    if(lastNick&&lastNick!==p.n&&Math.random()<.1) at=`<span class="at">@${lastNick}</span> `;
+    b.innerHTML=`<b>${p.n}</b>${vf}${at}${esc(t)}`;
+    lastNick=p.n;
+  }
+  d.appendChild(b);chat.appendChild(d);
+  while(chat.children.length>6)chat.removeChild(chat.firstChild);
+}
+const esc=s=>String(s).replace(/[<>&]/g,m=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[m]));
+
+const HC=["#ff3b5c","#fe2c55","#ff8a3d","#ffd23f","#5ac8fa","#af52de","#ff6b9d","#34c759"];
+function heart(){
+  const h=document.createElement("div");h.className="hb";
+  h.innerHTML=`<svg viewBox="0 0 24 24" fill="${rnd(HC)}"><path d="M12 21s-7.6-4.7-7.6-10A4.6 4.6 0 0112 7.6a4.6 4.6 0 017.6 3.4c0 5.3-7.6 10-7.6 10z"/></svg>`;
+  h.style.right=(6+Math.random()*26)+"px";
+  h.style.animationDuration=(3+Math.random()*1.8)+"s";
+  h.querySelector("svg").style.animationDuration=(1.1+Math.random()*1)+"s";
+  const s=.7+Math.random()*.6;h.style.width=h.style.height=(28*s)+"px";
+  $("#hearts").appendChild(h);setTimeout(()=>h.remove(),5200);
+}
+
+$("#live").addEventListener("click",e=>{if(e.target.closest("#endBtn")||e.target.closest("#sheet"))return;heart()});
+$("#endBtn").onclick=()=>{cfg.role==="guest"?quit():$("#sheet").classList.add("on")};
+$("#cancelEnd").onclick=()=>$("#sheet").classList.remove("on");
+$("#reallyEnd").onclick=quit;
+function quit(){
+  timers.forEach(t=>{clearInterval(t);clearTimeout(t)});timers=[];
+  recActive=false;try{rec&&rec.stop()}catch(e){}
+  [camStream,micStream].forEach(s=>s&&s.getTracks().forEach(t=>t.stop()));camStream=micStream=null;
+  try{audioCtx&&audioCtx.close()}catch(e){}
+  $("#chat").innerHTML="";$("#hearts").innerHTML="";$("#sheet").classList.remove("on");
+  $("#pinned").classList.remove("on");$("#mic").classList.remove("on");$("#llmDot").classList.remove("on");
+  $("#live").classList.remove("on");$("#setup").style.display="block";said=[];
+  try{document.exitFullscreen?.()}catch(e){}
+}
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# секреты — никогда не коммитим
+.env
+*.key
+secrets.*
+
+# python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# ос и редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# сборка
+node_modules/
+dist/
